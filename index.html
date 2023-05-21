@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+            content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Document</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+        <link rel="stylesheet" href="css/pico/pico.min.css">
+        <link rel="stylesheet" href="css/custom/root.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Ruda:wght@500&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+        <style type="text/css" media="screen">
+            #editorJson {
+                border-radius: 1%;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                height: 80%;
+                margin-top: -5%;
+            }
+
+            #editorVlang {
+                border-radius: 1%;
+                align-self: center;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                height: 80%;
+                margin-top: -5%;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="app" class="container-fluid main-app">
+            <article class="options">
+                <fieldset>
+                    <div class="grid">
+                        <label for="ck_omitempty">
+                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" disabled>
+                            omitempty
+                        </label>
+                        <label for="ck_enum_number">
+                            <input type="checkbox" id="ck_enum_number" name="ck_enum_number" disabled>
+                            enum to number
+                        </label>
+                        <label for="ck_struct_anon">
+                            <input type="checkbox" id="ck_struct_anon" name="ck_struct_anon" disabled>
+                            struct anonymous
+                        </label>
+                    </div>
+                </fieldset>
+            </article>
+
+
+            <div class="grid" style="display: grid; height: 80%; padding: -15px;">
+                <article style="text-align: center;">
+                    <h2>JSON</h2>
+                    <div id="editorJson" onChange=""></div>
+                </article>
+
+                <article style="text-align: center;">
+                    <h2>Vlang</h2>
+                    <div id="editorVlang"></div>
+                </article>
+            </div>
+        </div>
+
+        <script defer src="./index.js"></script>
+
+        <script src="./ace-builds/src-min/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script>
+            var editorVlang = ace.edit("editorVlang");
+            editorVlang.setTheme("ace/theme/dracula");
+            editorVlang.setOptions({
+                fontFamily: "JetBrains Mono",
+                fontSize: "15pt"
+            });
+            editorVlang.session.setMode("ace/mode/golang");
+
+
+            var editor = ace.edit("editorJson");
+            editor.setTheme("ace/theme/dracula");
+            editor.setOptions({
+                fontFamily: "JetBrains Mono",
+                fontSize: "15pt"
+            });
+            editor.session.setMode("ace/mode/json");
+
+            editor.getSession().on('change', function () {
+                try {
+                    const code = JsonToStruct(editor.getValue())
+
+                    editorVlang.setValue(code);
+                } catch (e) {
+                    console.log(e)
+                }
+            });
+        </script>
+
+    </body>
+
+</html>
