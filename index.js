@@ -61,6 +61,8 @@ function JsonToStruct(js, type_obj = undefined) {
     codeAfeterImplementation = afterImplementation.map(it => {
         if (it.type == 'sumType')
             return `type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
+        else if (it.types.length == 0)
+            return `struct ${it.nameType}{}`;
         else
             return `struct ${it.nameType} {\n${it.types[0]}\n}`;
     }).join('\n');
@@ -83,6 +85,8 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
     let objRoot = '';
     let typeArray = [];
 
+    if (json === null)
+        return { code: null };
     const keys = Object.keys(json)
     for (const key in keys) {
         const currentType = getType(json[keys[key]]);
@@ -96,7 +100,7 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
                 const content = ConstructStrucFromJson(json[keys[key]],
                     {
                         ...currentType,
-                        nameObj: undefined
+                        nameObj: typeObj
                     });
 
                 typeArray.push({
@@ -106,7 +110,7 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
                 });
             } else
                 typeArray.push(currentType);
-            
+
         }
         else if (!['array', 'object'].includes(currentType.nameType))
             /**
@@ -120,13 +124,27 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             let content = ConstructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
-                    nameObj: keys[key]
+                    nameObj: !Array.isArray(json) ? keys[key] : undefined
                 });
 
             if (currentType.nameType === 'array') {
                 if (content === '')
                     content = { code: 'Any' };
                 objRoot += `\t${keys[key]} []${content.code}\n`
+            }
+            else if (Array.isArray(json)) {
+                typeObj = {
+                    ...currentType,
+                    nameObj: content.code
+                }
+            }
+            else if (content.code === null) {
+                pushAfterImplementation({
+                    nameType: 'Any',
+                    type: 'Any',
+                    types: []
+                });
+                objRoot += `\t${keys[key]} Any\n`
             }
             else
                 objRoot += `\t${keys[key]} ${content.code}\n`
@@ -140,9 +158,22 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             code: `struct Root {\n${objRoot}\n}`,
             afterImplementation: ''
         };
+    else if (typeObj !== undefined && typeObj.nameObj === 'Undefined') {
+        objRoot = {
+            code: `type Root = []${typeObj.nameObj}\n`,
+            afterImplementation: ''
+        };
+    }
     else if (typeObj.nameType === 'object') {
 
-        const name = typeObj.nameObj !== undefined ? typeObj.nameObj.capitalize() : 'Undefined';
+        const name = (() => {
+            if (typeObj.nameObj !== undefined && typeObj.nameObj.nameObj !== undefined)
+                return typeObj.nameObj.nameObj.capitalize();
+            else if (typeObj.nameObj !== undefined)
+                return typeObj.nameObj.capitalize();
+            else
+                return 'Undefined';
+        })();
         pushAfterImplementation({
             nameType: name,
             types: [objRoot],
@@ -154,8 +185,8 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
         };
     }
     else if (typeArray.length > 0) {
-        typeArray = _.sortBy(typeArray, it => it.nameType);
-        
+        typeArray = _.sortBy(_.sortedUniqBy(typeArray, it => it.nameType), it => it.nameType);
+
         const typeNumbers = typeArray.filter(it => ['int', 'f32'].includes(it.nameType));
         if (typeNumbers.length > 1) {
             typeArray = typeArray.filter(it => !(['int', 'f32'].includes(it.nameType)));
