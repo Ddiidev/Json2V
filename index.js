@@ -1,17 +1,3 @@
-
-// var app = new Vue({
-//     el: '#app',
-//     data: {
-//         conf: {
-//             omitempty: true,
-//             enum_to_number: true
-//         }
-//     },
-//     method: {
-
-//     }
-// });
-
 /**
  * 
  * @param input
@@ -20,11 +6,17 @@
 function getType(input) {
     type = typeof (input);
     if (type === 'number')
+    return {
+        nameType: Number.isInteger(input) ? 'int' : 'f32',
+        view: Number.isInteger(input) ? 'int' : 'f32',
+        base: 'number',
+    };
+    else if (type === 'boolean')
         return {
-            nameType: Number.isInteger(input) ? 'int' : 'f32',
-            view: Number.isInteger(input) ? 'int' : 'f32',
-            base: 'number',
-        };
+            nameType: 'bool',
+            base: type,
+            view: 'bool'
+        }
     else if (Array.isArray(input))
         return {
             nameType: 'array',
@@ -52,7 +44,41 @@ function pushAfterImplementation(type) {
 }
 
 
+function resolverNameProperty(name) {
+    let final_name = '';
+    for (let i = 0; i < name.length; i++) {
+        const char = name[i];
+        if (char === char.toUpperCase())
+            final_name += `_${char.toLowerCase()}`;
+        else
+            final_name += char;
+    }
+    final_name = final_name.charAt(0) == '_' ? final_name.substr(1) : final_name;
+    return final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
+}
 
+function resolverNameType(name) {
+    let final_name = '';
+    let isUpper = false;
+    for (let i = 0; i < name.length; i++) {
+        const char = name[i];
+        if (char !== '_')
+            if (isUpper) {
+                final_name += char.toUpperCase();
+                isUpper = false;
+            } else
+                final_name += char;
+        else
+            isUpper = true;
+    }
+    final_name = final_name.charAt(0).toLocaleUpperCase() + final_name.substr(1);
+    return final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
+}
+
+
+/**
+ * @description Add a new type to the list of types to be implemented and convert the json to struct
+ */
 function JsonToStruct(js, type_obj = undefined) {
     afterImplementation = [];
     let code = ConstructStrucFromJson(js, type_obj).code;
@@ -116,7 +142,7 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             /**
              * Simples key
             */
-            objRoot += `\t${keys[key]} ${currentType.view}\n`
+            objRoot += `\t${resolverNameProperty(keys[key])} ${currentType.view}\n`
         else {
             /**
              * Object or Array of key nested
@@ -130,7 +156,7 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             if (currentType.nameType === 'array') {
                 if (content === '')
                     content = { code: 'Any' };
-                objRoot += `\t${keys[key]} []${content.code}\n`
+                objRoot += `\t${resolverNameProperty(keys[key])} []${content.code}\n`
             }
             else if (Array.isArray(json)) {
                 typeObj = {
@@ -144,10 +170,10 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
                     type: 'Any',
                     types: []
                 });
-                objRoot += `\t${keys[key]} Any\n`
+                objRoot += `\t${resolverNameProperty(keys[key])} Any\n`
             }
             else
-                objRoot += `\t${keys[key]} ${content.code}\n`
+                objRoot += `\t${resolverNameProperty(keys[key])} ${content.code}\n`
         }
     }
 
@@ -168,14 +194,14 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
 
         const name = (() => {
             if (typeObj.nameObj !== undefined && typeObj.nameObj.nameObj !== undefined)
-                return typeObj.nameObj.nameObj.capitalize();
+                return resolverNameType(typeObj.nameObj.nameObj);
             else if (typeObj.nameObj !== undefined)
-                return typeObj.nameObj.capitalize();
+                return resolverNameType(typeObj.nameObj);
             else
                 return 'Undefined';
         })();
         pushAfterImplementation({
-            nameType: name,
+            nameType: resolverNameType(name),
             types: [objRoot],
             type: typeArray.length > 1 ? 'sumType' : ''
         });
