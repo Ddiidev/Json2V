@@ -13,10 +13,10 @@
 // });
 
 /**
-     * 
-     * @param input
-     * @returns {{nameType: string, view: string, base: string}}}
-     */
+ * 
+ * @param input
+ * @returns {{nameType: string, view: string, base: string}}}
+ */
 function getType(input) {
     type = typeof (input);
     if (type === 'number')
@@ -46,18 +46,27 @@ String.prototype.capitalize = function () {
 /** @type {{nameType: string, type: string, types: []Object}[]} */
 let afterImplementation = [];
 
+function pushAfterImplementation(type) {
+    if (afterImplementation.find(it => it.nameType === type.nameType) === undefined)
+        afterImplementation.push(type);
+}
+
+
+
 function JsonToStruct(js, type_obj = undefined) {
     afterImplementation = [];
     let code = ConstructStrucFromJson(js, type_obj).code;
 
-    
+
     codeAfeterImplementation = afterImplementation.map(it => {
         if (it.type == 'sumType')
             return `type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
+        else
+            return `struct ${it.nameType} {\n${it.types[0]}\n}`;
     }).join('\n');
 
 
-    code += `\n\n${codeAfeterImplementation}`
+    code += `\n\n${codeAfeterImplementation}`;
 
     return code;
 }
@@ -70,12 +79,12 @@ function JsonToStruct(js, type_obj = undefined) {
  */
 function ConstructStrucFromJson(js, typeObj = undefined) {
 
-    json = typeof (js) === 'string' ? JSON.parse(js) : js;
+    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
     let objRoot = '';
     let typeArray = [];
 
-    var keys = Object.keys(json)
-    for (key in keys) {
+    const keys = Object.keys(json)
+    for (const key in keys) {
         const currentType = getType(json[keys[key]]);
 
 
@@ -83,10 +92,21 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             /**
              * into nested array
             */
+            if (currentType.nameType === 'object') {
+                const content = ConstructStrucFromJson(json[keys[key]],
+                    {
+                        ...currentType,
+                        nameObj: undefined
+                    });
 
-            // if (typeArray.includes(it => it.name_type ===))
-            typeArray.push(currentType);
-
+                typeArray.push({
+                    ...currentType,
+                    view: content.code,
+                    nameType: content.code
+                });
+            } else
+                typeArray.push(currentType);
+            
         }
         else if (!['array', 'object'].includes(currentType.nameType))
             /**
@@ -97,13 +117,19 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             /**
              * Object or Array of key nested
              */
-            const content = ConstructStrucFromJson(json[keys[key]],
+            let content = ConstructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: keys[key]
                 });
-            objRoot += `\t${keys[key]} []${content.code}\n`
 
+            if (currentType.nameType === 'array') {
+                if (content === '')
+                    content = { code: 'Any' };
+                objRoot += `\t${keys[key]} []${content.code}\n`
+            }
+            else
+                objRoot += `\t${keys[key]} ${content.code}\n`
         }
     }
 
@@ -114,6 +140,19 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             code: `struct Root {\n${objRoot}\n}`,
             afterImplementation: ''
         };
+    else if (typeObj.nameType === 'object') {
+
+        const name = typeObj.nameObj !== undefined ? typeObj.nameObj.capitalize() : 'Undefined';
+        pushAfterImplementation({
+            nameType: name,
+            types: [objRoot],
+            type: typeArray.length > 1 ? 'sumType' : ''
+        });
+
+        objRoot = {
+            code: name
+        };
+    }
     else if (typeArray.length > 0) {
 
         const typeNumbers = typeArray.filter(it => ['int', 'f32'].includes(it.nameType));
@@ -125,10 +164,10 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
         const name = typeArray.map(x => x.view.capitalize()).join('');
 
 
-        afterImplementation.push({
+        pushAfterImplementation({
             nameType: name,
             types: typeArray,
-            type: typeArray.length > 1 ? 'sumType' : 'any'
+            type: typeArray.length > 1 ? 'sumType' : ''
         });
 
         objRoot = {
