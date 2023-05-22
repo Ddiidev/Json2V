@@ -154,21 +154,27 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
         };
     }
     else if (typeArray.length > 0) {
-
+        typeArray = _.sortBy(typeArray, it => it.nameType);
+        
         const typeNumbers = typeArray.filter(it => ['int', 'f32'].includes(it.nameType));
         if (typeNumbers.length > 1) {
             typeArray = typeArray.filter(it => !(['int', 'f32'].includes(it.nameType)));
             typeArray.push(typeNumbers.find(it => it.nameType === 'f32'));
         }
 
-        const name = typeArray.map(x => x.view.capitalize()).join('');
+        const name = (() => {
+            if (typeArray.length > 1)
+                return typeArray.map(x => x.view.capitalize()).join('');
+            else
+                return typeArray[0].view;
+        })();
 
-
-        pushAfterImplementation({
-            nameType: name,
-            types: typeArray,
-            type: typeArray.length > 1 ? 'sumType' : ''
-        });
+        if (typeArray.length > 1)
+            pushAfterImplementation({
+                nameType: name,
+                types: typeArray,
+                type: typeArray.length > 1 ? 'sumType' : ''
+            });
 
         objRoot = {
             code: name
