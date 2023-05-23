@@ -335,15 +335,41 @@ function currentTypeIsArray(type) {
 }
 
 
+/**
+ * @description Verify if hiritageObj is undefined, if true, the type is simple
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
 function constructStructTypeSimple(hiritageObj) {
     return hiritageObj === undefined;
 }
 
 
+/**
+ * @description Verify if hiritageObj is undefined and nameObj is Undefined, if true, the type is []Undefined
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
 function constructStructWithArrayOfTypeUndefined(hiritageObj) {
     return hiritageObj !== undefined && hiritageObj.nameObj === 'Undefined';
 }
 
+
+/**
+ * @description Verify if hiritageObj is undefined and nameObj is object, if true, the type is struct with name the key
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
 function constructStructWithNewStructAux(hiritageObj) {
     return hiritageObj !== undefined && hiritageObj.nameType === 'object';
+}
+
+
+/**
+ * @description verify if 
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
+function constructStructStructWithSumType(type) {
+    return type.length > 0;
 }
