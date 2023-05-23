@@ -148,10 +148,12 @@ function JsonToStruct(js, type_obj = undefined) {
  */
 function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
+
+    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
+
     if (json === null)
         return { code: null };
 
-    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
     let typeRoot = '';
     let typesArray = [];
     const keys = Object.keys(json)
@@ -162,13 +164,10 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         const currentType = getType(json[keys[key]]);
 
 
-        if (isInsideNestedArray(hiritageObj))
-            /* into nested array */
-            typesArray.push(currentType);
 
-        else if (isInsideNestedArray(hiritageObj) && currentTypeIsObject(currentType)) {
+        if (isInsideNestedArray(hiritageObj) && currentTypeIsObject(currentType)) {
             /* into nested array */
-            const content = ConstructStrucFromJson(json[keys[key]],
+            const contentTree = ConstructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: hiritageObj
@@ -176,38 +175,48 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
             typesArray.push({
                 ...currentType,
-                view: content.code,
-                nameType: content.code
+                view: contentTree.code,
+                nameType: contentTree.code
             });
-        
-        }
-        else if (!['array', 'object'].includes(currentType.nameType))
-            /**
-             * Simples key
-            */
+
+        } else if (isInsideNestedArray(hiritageObj))
+            /* into nested array */
+            typesArray.push(currentType);
+        else if (!currentTypeIsObjectOrArray(currentType))
+            /* Simples key */
             typeRoot += `\t${resolverNameProperty(keys[key])} ${currentType.view}\n`
-        else {
-            /**
-             * Object or Array of key nested
-             */
-            let content = ConstructStrucFromJson(json[keys[key]],
+
+        else if (currentTypeIsArray(currentType)) {
+            /* Get element by element of array */
+            let contentTree = ConstructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: !Array.isArray(json) ? keys[key] : undefined
                 });
 
-            if (currentType.nameType === 'array') {
-                if (content === '')
-                    content = { code: 'Any' };
-                typeRoot += `\t${resolverNameProperty(keys[key])} []${content.code}\n`
-            }
-            else if (Array.isArray(json)) {
+            if (contentTree === '')
+                contentTree = { code: 'Any' };
+
+            typeRoot += `\t${resolverNameProperty(keys[key])} []${contentTree.code}\n`
+
+        } else {
+            /**
+             * Object or Array of key nested
+             */
+            let contentTree = ConstructStrucFromJson(json[keys[key]],
+                {
+                    ...currentType,
+                    nameObj: !Array.isArray(json) ? keys[key] : undefined
+                });
+
+
+            if (Array.isArray(json)) {
                 hiritageObj = {
                     ...currentType,
-                    nameObj: content.code
+                    nameObj: contentTree.code
                 }
             }
-            else if (content.code === null) {
+            else if (contentTree.code === null) {
                 pushAfterImplementation({
                     nameType: 'Any',
                     type: 'Any',
@@ -216,24 +225,24 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 typeRoot += `\t${resolverNameProperty(keys[key])} Any\n`
             }
             else
-                typeRoot += `\t${resolverNameProperty(keys[key])} ${content.code}\n`
+                typeRoot += `\t${resolverNameProperty(keys[key])} ${contentTree.code}\n`
         }
     }
 
 
 
-    if (hiritageObj === undefined)
+    if (constructStructTypeSimple(hiritageObj))
         typeRoot = {
             code: `struct Root {\n${typeRoot}\n}`,
             afterImplementation: ''
         };
-    else if (hiritageObj !== undefined && hiritageObj.nameObj === 'Undefined') {
+    else if (constructStructWithArrayOfTypeUndefined(hiritageObj)) {
         typeRoot = {
             code: `type Root = []${hiritageObj.nameObj}\n`,
             afterImplementation: ''
         };
     }
-    else if (hiritageObj.nameType === 'object') {
+    else if (constructStructWithNewStructAux(hiritageObj)) {
 
         const name = (() => {
             if (hiritageObj.nameObj !== undefined && hiritageObj.nameObj.nameObj !== undefined)
@@ -243,6 +252,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
             else
                 return 'Undefined';
         })();
+
         pushAfterImplementation({
             nameType: resolverNameType(name),
             types: [typeRoot],
@@ -303,4 +313,37 @@ function isInsideNestedArray(hiritageObj) {
  */
 function currentTypeIsObject(type) {
     return type.nameType === 'object';
+}
+
+/**
+ * @description Check if current type name type is an object or array
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
+function currentTypeIsObjectOrArray(type) {
+    return ['object', 'array'].includes(type.nameType);
+}
+
+
+/**
+ * @description Check if current type name type is an array
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
+function currentTypeIsArray(type) {
+    return type.nameType === 'array';
+}
+
+
+function constructStructTypeSimple(hiritageObj) {
+    return hiritageObj === undefined;
+}
+
+
+function constructStructWithArrayOfTypeUndefined(hiritageObj) {
+    return hiritageObj !== undefined && hiritageObj.nameObj === 'Undefined';
+}
+
+function constructStructWithNewStructAux(hiritageObj) {
+    return hiritageObj !== undefined && hiritageObj.nameType === 'object';
 }
