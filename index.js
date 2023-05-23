@@ -1,16 +1,49 @@
+main();
+
+function main() {
+    var editorVlang = ace.edit("editorVlang");
+    editorVlang.setTheme("ace/theme/dracula");
+    editorVlang.setOptions({
+        fontFamily: "JetBrains Mono",
+        fontSize: "14pt"
+    });
+    editorVlang.session.setMode("ace/mode/golang");
+
+
+    var editor = ace.edit("editorJson");
+    editor.setTheme("ace/theme/dracula");
+    editor.setOptions({
+        fontFamily: "JetBrains Mono",
+        fontSize: "14pt"
+    });
+    editor.session.setMode("ace/mode/json");
+
+    editor.getSession().on('change', function () {
+        try {
+            const code = JsonToStruct(editor.getValue())
+
+            editorVlang.setValue(code);
+        } catch (e) {
+            console.log(e)
+        }
+    });
+}
+
+
+
 /**
  * 
  * @param input
- * @returns {{nameType: string, view: string, base: string}}}
+ * @returns {{nameType: string, view: string, base: string}}
  */
 function getType(input) {
     type = typeof (input);
     if (type === 'number')
-    return {
-        nameType: Number.isInteger(input) ? 'int' : 'f32',
-        view: Number.isInteger(input) ? 'int' : 'f32',
-        base: 'number',
-    };
+        return {
+            nameType: Number.isInteger(input) ? 'int' : 'f32',
+            view: Number.isInteger(input) ? 'int' : 'f32',
+            base: 'number',
+        };
     else if (type === 'boolean')
         return {
             nameType: 'bool',
@@ -43,7 +76,9 @@ function pushAfterImplementation(type) {
         afterImplementation.push(type);
 }
 
-
+/**
+ * @description Sets the property name to a suitable name in the V language standard
+ * */
 function resolverNameProperty(name) {
     let final_name = '';
     for (let i = 0; i < name.length; i++) {
@@ -57,6 +92,10 @@ function resolverNameProperty(name) {
     return final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
 }
 
+
+/**
+ * @description Sets the type name to a suitable name in the V language standard
+ * */
 function resolverNameType(name) {
     let final_name = '';
     let isUpper = false;
@@ -99,50 +138,54 @@ function JsonToStruct(js, type_obj = undefined) {
     return code;
 }
 
+
+
 /**
  * 
  * @param {string | object} js 
- * @param {{nameType: string, view: string, nameObj: string} | undefined} typeObj 
+ * @param {{nameType: string, view: string, nameObj: string} | undefined} hiritageObj 
  * @returns {{code: string, afterImplementation: string}}
  */
-function ConstructStrucFromJson(js, typeObj = undefined) {
-
-    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
-    let objRoot = '';
-    let typeArray = [];
+function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
     if (json === null)
         return { code: null };
+
+    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
+    let typeRoot = '';
+    let typesArray = [];
     const keys = Object.keys(json)
+
+
+
     for (const key in keys) {
         const currentType = getType(json[keys[key]]);
 
 
-        if (typeObj !== undefined && typeObj.nameType === 'array') {
-            /**
-             * into nested array
-            */
-            if (currentType.nameType === 'object') {
-                const content = ConstructStrucFromJson(json[keys[key]],
-                    {
-                        ...currentType,
-                        nameObj: typeObj
-                    });
+        if (isInsideNestedArray(hiritageObj))
+            /* into nested array */
+            typesArray.push(currentType);
 
-                typeArray.push({
+        else if (isInsideNestedArray(hiritageObj) && currentTypeIsObject(currentType)) {
+            /* into nested array */
+            const content = ConstructStrucFromJson(json[keys[key]],
+                {
                     ...currentType,
-                    view: content.code,
-                    nameType: content.code
+                    nameObj: hiritageObj
                 });
-            } else
-                typeArray.push(currentType);
 
+            typesArray.push({
+                ...currentType,
+                view: content.code,
+                nameType: content.code
+            });
+        
         }
         else if (!['array', 'object'].includes(currentType.nameType))
             /**
              * Simples key
             */
-            objRoot += `\t${resolverNameProperty(keys[key])} ${currentType.view}\n`
+            typeRoot += `\t${resolverNameProperty(keys[key])} ${currentType.view}\n`
         else {
             /**
              * Object or Array of key nested
@@ -156,10 +199,10 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
             if (currentType.nameType === 'array') {
                 if (content === '')
                     content = { code: 'Any' };
-                objRoot += `\t${resolverNameProperty(keys[key])} []${content.code}\n`
+                typeRoot += `\t${resolverNameProperty(keys[key])} []${content.code}\n`
             }
             else if (Array.isArray(json)) {
-                typeObj = {
+                hiritageObj = {
                     ...currentType,
                     nameObj: content.code
                 }
@@ -170,72 +213,94 @@ function ConstructStrucFromJson(js, typeObj = undefined) {
                     type: 'Any',
                     types: []
                 });
-                objRoot += `\t${resolverNameProperty(keys[key])} Any\n`
+                typeRoot += `\t${resolverNameProperty(keys[key])} Any\n`
             }
             else
-                objRoot += `\t${resolverNameProperty(keys[key])} ${content.code}\n`
+                typeRoot += `\t${resolverNameProperty(keys[key])} ${content.code}\n`
         }
     }
 
 
 
-    if (typeObj === undefined)
-        objRoot = {
-            code: `struct Root {\n${objRoot}\n}`,
+    if (hiritageObj === undefined)
+        typeRoot = {
+            code: `struct Root {\n${typeRoot}\n}`,
             afterImplementation: ''
         };
-    else if (typeObj !== undefined && typeObj.nameObj === 'Undefined') {
-        objRoot = {
-            code: `type Root = []${typeObj.nameObj}\n`,
+    else if (hiritageObj !== undefined && hiritageObj.nameObj === 'Undefined') {
+        typeRoot = {
+            code: `type Root = []${hiritageObj.nameObj}\n`,
             afterImplementation: ''
         };
     }
-    else if (typeObj.nameType === 'object') {
+    else if (hiritageObj.nameType === 'object') {
 
         const name = (() => {
-            if (typeObj.nameObj !== undefined && typeObj.nameObj.nameObj !== undefined)
-                return resolverNameType(typeObj.nameObj.nameObj);
-            else if (typeObj.nameObj !== undefined)
-                return resolverNameType(typeObj.nameObj);
+            if (hiritageObj.nameObj !== undefined && hiritageObj.nameObj.nameObj !== undefined)
+                return resolverNameType(hiritageObj.nameObj.nameObj);
+            else if (hiritageObj.nameObj !== undefined)
+                return resolverNameType(hiritageObj.nameObj);
             else
                 return 'Undefined';
         })();
         pushAfterImplementation({
             nameType: resolverNameType(name),
-            types: [objRoot],
-            type: typeArray.length > 1 ? 'sumType' : ''
+            types: [typeRoot],
+            type: typesArray.length > 1 ? 'sumType' : ''
         });
 
-        objRoot = {
+        typeRoot = {
             code: name
         };
     }
-    else if (typeArray.length > 0) {
-        typeArray = _.sortBy(_.sortedUniqBy(typeArray, it => it.nameType), it => it.nameType);
+    else if (typesArray.length > 0) {
+        typesArray = _.sortBy(_.sortedUniqBy(typesArray, it => it.nameType), it => it.nameType);
 
-        const typeNumbers = typeArray.filter(it => ['int', 'f32'].includes(it.nameType));
+        const typeNumbers = typesArray.filter(it => ['int', 'f32'].includes(it.nameType));
         if (typeNumbers.length > 1) {
-            typeArray = typeArray.filter(it => !(['int', 'f32'].includes(it.nameType)));
-            typeArray.push(typeNumbers.find(it => it.nameType === 'f32'));
+            typesArray = typesArray.filter(it => !(['int', 'f32'].includes(it.nameType)));
+            typesArray.push(typeNumbers.find(it => it.nameType === 'f32'));
         }
 
         const name = (() => {
-            if (typeArray.length > 1)
-                return typeArray.map(x => x.view.capitalize()).join('');
+            if (typesArray.length > 1)
+                return typesArray.map(x => x.view.capitalize()).join('');
             else
-                return typeArray[0].view;
+                return typesArray[0].view;
         })();
 
-        if (typeArray.length > 1)
+        if (typesArray.length > 1)
             pushAfterImplementation({
                 nameType: name,
-                types: typeArray,
-                type: typeArray.length > 1 ? 'sumType' : ''
+                types: typesArray,
+                type: typesArray.length > 1 ? 'sumType' : ''
             });
 
-        objRoot = {
+        typeRoot = {
             code: name
         };
     }
-    return objRoot;
+    return typeRoot;
+}
+
+
+
+
+
+/**
+ * @description Check if current type name type is an array
+ * @param {{nameType: string, view: string, nameObj: string} | undefined}} hiritageObj 
+ * @returns {boolean}
+ */
+function isInsideNestedArray(hiritageObj) {
+    return hiritageObj !== undefined && hiritageObj.nameType === 'array';
+}
+
+/**
+ * @description Check if current type name type is an object
+ * @param {{nameType: string, view: string, base: string}} type 
+ * @returns {boolean}
+ */
+function currentTypeIsObject(type) {
+    return type.nameType === 'object';
 }

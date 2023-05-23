@@ -56,3 +56,24 @@ h2 {
     margin-top: 20px;
     padding-bottom: 20px;
 }
+
+#editorJson {
+    border-radius: 1%;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 80%;
+    margin-top: -5%;
+}
+
+#editorVlang {
+    border-radius: 1%;
+    align-self: center;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 80%;
+    margin-top: -5%;
+}
