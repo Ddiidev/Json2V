@@ -18,6 +18,10 @@ The generated code can have sums of types, structs and Any{}(empty)
 
 ![screenshot](/assets/img1.png)
 
+<br/> <br/>
+
+![screenshot](/assets/img2.gif)
+
 
 <br/>
 
