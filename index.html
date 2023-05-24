@@ -26,15 +26,15 @@
                 <fieldset>
                     <div class="grid">
                         <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
-                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" checked>
+                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" onclick="click_ck_omitempty()" checked>
                             omitempty
                         </label>
                         <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type" for="ck_reserved_word">
-                            <input type="checkbox" id="ck_reserved_word" name="ck_reserved_word" disabled>
+                            <input type="checkbox" id="ck_reserved_word" onclick="click_ck_reserved_word()" name="ck_reserved_word">
                             reserved word with @
                         </label>
                         <label data-tooltip="Anonymous struct instead of a helper struct" for="ck_struct_anon">
-                            <input type="checkbox" id="ck_struct_anon" name="ck_struct_anon" disabled>
+                            <input type="checkbox" id="ck_struct_anon" onclick="click_ck_struct_anon()" name="ck_struct_anon" disabled>
                             struct anonymous
                         </label>
                     </div>

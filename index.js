@@ -1,32 +1,32 @@
-main();
+var editorVlang = ace.edit("editorVlang");
+var editorJson = ace.edit("editorJson");
 
-function main() {
-    var editorVlang = ace.edit("editorVlang");
-    editorVlang.setTheme("ace/theme/dracula");
-    editorVlang.setOptions({
-        fontFamily: "JetBrains Mono",
-        fontSize: "14pt"
-    });
-    editorVlang.session.setMode("ace/mode/golang");
+editorVlang.setTheme("ace/theme/dracula");
+editorVlang.setOptions({
+    fontFamily: "JetBrains Mono",
+    fontSize: "14pt"
+});
+editorVlang.session.setMode("ace/mode/golang");
 
 
-    var editor = ace.edit("editorJson");
-    editor.setTheme("ace/theme/dracula");
-    editor.setOptions({
-        fontFamily: "JetBrains Mono",
-        fontSize: "14pt"
-    });
-    editor.session.setMode("ace/mode/json");
+editorJson.setTheme("ace/theme/dracula");
+editorJson.setOptions({
+    fontFamily: "JetBrains Mono",
+    fontSize: "14pt"
+});
+editorJson.session.setMode("ace/mode/json");
+editorJson.getSession().on('change', runCode);
 
-    editor.getSession().on('change', function () {
-        try {
-            const code = JsonToStruct(editor.getValue())
 
-            editorVlang.setValue(code);
-        } catch (e) {
-            console.log(e)
-        }
-    });
+
+function runCode() {
+    try {
+        const code = JsonToStruct(editorJson.getValue())
+
+        editorVlang.setValue(code);
+    } catch (e) {
+        console.log(e)
+    }
 }
 
 const RESERVED_WORDS = [
@@ -51,7 +51,7 @@ const RESERVED_WORDS = [
     'defer',
     'goto',
 
-    
+
     'mut',
     'const',
     'map',
@@ -76,13 +76,24 @@ const RESERVED_WORDS = [
 ]
 
 var FlagOmitEmpty = false;
-var FlagReserverdWords = false;
+var FlagReserverdWordsWithAt = false;
 var FlagStructAnon = false;
 function loadFlags() {
     FlagOmitEmpty = document.getElementById('ck_omitempty').checked;
-    FlagReserverdWords = document.getElementById('ck_reserved_word').checked;
+    FlagReserverdWordsWithAt = document.getElementById('ck_reserved_word').checked;
     FlagStructAnon = document.getElementById('ck_struct_anon').checked;
 }
+
+function click_ck_omitempty() {
+    loadFlags();
+    runCode();
+}
+
+function click_ck_reserved_word() {
+    loadFlags();
+    runCode();
+}
+
 
 /**
  * 
@@ -142,7 +153,7 @@ function resolverNameProperty(name) {
     let final_name = '';
     for (let i = 0; i < name.length; i++) {
         const char = name[i];
-        if (char === char.toUpperCase())
+        if (char === char.toUpperCase() && !Number.isInteger(parseInt(char)))
             final_name += `_${char.toLowerCase()}`;
         else
             final_name += char;
@@ -150,10 +161,15 @@ function resolverNameProperty(name) {
     final_name = final_name.charAt(0) == '_' ? final_name.substr(1) : final_name;
     final_name = final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
 
-    if (RESERVED_WORDS.includes(final_name))
+    let currentReservedWord = RESERVED_WORDS.includes(final_name);
+    if (currentReservedWord && FlagReserverdWordsWithAt)
+        final_name = `@${final_name}`;
+    else if (currentReservedWord)
         final_name = `${final_name}_`;
-    
-    return { name: final_name, replaceName: final_name !== name ? `json: "${name}"` : '' };
+
+    const replaceName = final_name !== name && !(currentReservedWord && FlagReserverdWordsWithAt) ? `json: "${name}"` : '';
+
+    return { name: final_name, replaceName: replaceName };
 }
 
 
@@ -189,13 +205,13 @@ function constructAttribute(attrib) {
     let attribs = attrib === '' || attrib === undefined ? [] : [attrib];
 
     if (FlagOmitEmpty)
-        attribs.push('ominitempty');
+        attribs.push('omitempty');
 
     if (attribs.length === 0)
         return '';
     else if (attribs.length === 1)
         return `[${attribs.join('')}]`;
-    
+
     return `[${attribs.join('; ')}]`;
 }
 
@@ -277,7 +293,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
             const property = resolverNameProperty(keys[key]);
             const attribute = constructAttribute(property.replaceName);
             typeRoot += `\t${property.name} ${currentType.view} ${attribute}\n`
-            
+
         } else if (currentTypeIsArray(currentType)) {
             /* Get element by element of array */
             let contentTree = ConstructStrucFromJson(json[keys[key]],
@@ -288,7 +304,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
             if (contentTree === '')
                 contentTree = { code: 'Any' };
-            
+
             const property = resolverNameProperty(keys[key]);
             const attribute = constructAttribute(property.replaceName);
             typeRoot += `\t${property.name} []${contentTree.code} ${attribute}\n`
@@ -321,7 +337,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 typeRoot += `\t${property.name} Any ${attribute}\n`
             }
             else {
-                
+
                 const property = resolverNameProperty(keys[key]);
                 const attribute = constructAttribute(property.replaceName);
                 typeRoot += `\t${property.name} ${contentTree.code} ${attribute}\n`
