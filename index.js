@@ -75,6 +75,15 @@ const RESERVED_WORDS = [
     'false',
 ]
 
+var FlagOmitEmpty = false;
+var FlagReserverdWords = false;
+var FlagStructAnon = false;
+function loadFlags() {
+    FlagOmitEmpty = document.getElementById('ck_omitempty').checked;
+    FlagReserverdWords = document.getElementById('ck_reserved_word').checked;
+    FlagStructAnon = document.getElementById('ck_struct_anon').checked;
+}
+
 /**
  * 
  * @param input
@@ -171,9 +180,35 @@ function resolverNameType(name) {
 
 
 /**
+ * @description Construct a attribute of property
+ * @param {string} attrib
+ * @returns {string}
+ */
+function constructAttribute(attrib) {
+
+    let attribs = attrib === '' || attrib === undefined ? [] : [attrib];
+
+    if (FlagOmitEmpty)
+        attribs.push('ominitempty');
+
+    if (attribs.length === 0)
+        return '';
+    else if (attribs.length === 1)
+        return `[${attribs.join('')}]`;
+    
+    return `[${attribs.join('; ')}]`;
+}
+
+
+/**
  * @description Add a new type to the list of types to be implemented and convert the json to struct
  */
 function JsonToStruct(js, type_obj = undefined) {
+
+
+    loadFlags();
+
+
     afterImplementation = [];
     let code = ConstructStrucFromJson(js, type_obj).code;
 
@@ -240,7 +275,8 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         else if (!currentTypeIsObjectOrArray(currentType)) {
             /* Simples key */
             const property = resolverNameProperty(keys[key]);
-            typeRoot += `\t${property.name} ${currentType.view} ${property.replaceName}\n`
+            const attribute = constructAttribute(property.replaceName);
+            typeRoot += `\t${property.name} ${currentType.view} ${attribute}\n`
             
         } else if (currentTypeIsArray(currentType)) {
             /* Get element by element of array */
@@ -254,7 +290,8 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 contentTree = { code: 'Any' };
             
             const property = resolverNameProperty(keys[key]);
-            typeRoot += `\t${property.name} []${contentTree.code} ${property.replaceName}\n`
+            const attribute = constructAttribute(property.replaceName);
+            typeRoot += `\t${property.name} []${contentTree.code} ${attribute}\n`
 
         } else {
             /**
@@ -280,12 +317,14 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                     types: []
                 });
                 const property = resolverNameProperty(keys[key]);
-                typeRoot += `\t${property.name} Any ${property.replaceName}\n`
+                const attribute = constructAttribute(property.replaceName);
+                typeRoot += `\t${property.name} Any ${attribute}\n`
             }
             else {
                 
                 const property = resolverNameProperty(keys[key]);
-                typeRoot += `\t${property.name} ${contentTree.code} ${property.replaceName}\n`
+                const attribute = constructAttribute(property.replaceName);
+                typeRoot += `\t${property.name} ${contentTree.code} ${attribute}\n`
             }
         }
     }

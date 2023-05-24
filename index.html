@@ -20,12 +20,13 @@
     </head>
 
     <body>
-        <div id="app" class="container-fluid main-app">
+        <div id="app">
+        <div class="container-fluid main-app">
             <article class="options">
                 <fieldset>
                     <div class="grid">
                         <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
-                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" disabled>
+                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" checked>
                             omitempty
                         </label>
                         <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type" for="ck_reserved_word">
@@ -44,7 +45,7 @@
             <div class="grid" style="display: grid; height: 80%; padding: -15px;">
                 <article style="text-align: center;">
                     <h2>JSON</h2>
-                    <div id="editorJson" onChange=""></div>
+                    <div id="editorJson"></div>
                 </article>
 
                 <article style="text-align: center;">
@@ -53,6 +54,7 @@
                 </article>
             </div>
         </div>
+    </div>
 
         <script src="./ace-builds/src-min/ace.js" type="text/javascript" charset="utf-8"></script>
 

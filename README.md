@@ -9,9 +9,10 @@ The generated code can have sums of types, structs and Any{}(empty)
  - [X] Key and value simple.
  - [X] SumTypes for array with multiple types.
  - [X] New structures for each object key.
+ - [ ] Reserved word with _ or @.
  - [ ] Omitempty.
  - [ ] Structs anonymous.
- - [ ] Property name replacement.
+ - [X] Property name replacement.
 
 <br/> <br/>
 
