@@ -24,15 +24,15 @@
             <article class="options">
                 <fieldset>
                     <div class="grid">
-                        <label for="ck_omitempty">
+                        <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
                             <input type="checkbox" id="ck_omitempty" name="ck_omitempty" disabled>
                             omitempty
                         </label>
-                        <label for="ck_enum_number">
-                            <input type="checkbox" id="ck_enum_number" name="ck_enum_number" disabled>
-                            enum to number
+                        <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type" for="ck_reserved_word">
+                            <input type="checkbox" id="ck_reserved_word" name="ck_reserved_word" disabled>
+                            reserved word with @
                         </label>
-                        <label for="ck_struct_anon">
+                        <label data-tooltip="Anonymous struct instead of a helper struct" for="ck_struct_anon">
                             <input type="checkbox" id="ck_struct_anon" name="ck_struct_anon" disabled>
                             struct anonymous
                         </label>

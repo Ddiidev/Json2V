@@ -29,7 +29,51 @@ function main() {
     });
 }
 
+const RESERVED_WORDS = [
+    'struct',
+    'interface',
+    'union',
+    'type',
+    'enum',
 
+
+    'for',
+    'pub',
+    'fn',
+    'import',
+    'if',
+    'else',
+    'return',
+    'break',
+    'continue',
+    'spawn',
+    'go',
+    'defer',
+    'goto',
+
+    
+    'mut',
+    'const',
+    'map',
+    'int',
+    'i8',
+    'i16',
+    'i32',
+    'i64',
+    'u8',
+    'u16',
+    'u32',
+    'u64',
+    'f32',
+    'f64',
+    'bool',
+    'string',
+    'rune',
+    'byte',
+    'nil',
+    'true',
+    'false',
+]
 
 /**
  * 
@@ -64,20 +108,26 @@ function getType(input) {
     };
 }
 
+
 String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.substr(1);
 }
 
+
 /** @type {{nameType: string, type: string, types: []Object}[]} */
 let afterImplementation = [];
+
 
 function pushAfterImplementation(type) {
     if (afterImplementation.find(it => it.nameType === type.nameType) === undefined)
         afterImplementation.push(type);
 }
 
+
 /**
  * @description Sets the property name to a suitable name in the V language standard
+ * @param {string} name
+ * @returns {{ name: string, replaceName: string }}
  * */
 function resolverNameProperty(name) {
     let final_name = '';
@@ -89,7 +139,12 @@ function resolverNameProperty(name) {
             final_name += char;
     }
     final_name = final_name.charAt(0) == '_' ? final_name.substr(1) : final_name;
-    return final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
+    final_name = final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
+
+    if (RESERVED_WORDS.includes(final_name))
+        final_name = `${final_name}_`;
+    
+    return { name: final_name, replaceName: final_name !== name ? `json: "${name}"` : '' };
 }
 
 
@@ -129,7 +184,7 @@ function JsonToStruct(js, type_obj = undefined) {
         else if (it.types.length == 0)
             return `struct ${it.nameType}{}`;
         else
-            return `struct ${it.nameType} {\n${it.types[0]}\n}`;
+            return `struct ${it.nameType} {\n${it.types[0]}}\n`;
     }).join('\n');
 
 
@@ -182,11 +237,12 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         } else if (isInsideNestedArray(hiritageObj))
             /* into nested array */
             typesArray.push(currentType);
-        else if (!currentTypeIsObjectOrArray(currentType))
+        else if (!currentTypeIsObjectOrArray(currentType)) {
             /* Simples key */
-            typeRoot += `\t${resolverNameProperty(keys[key])} ${currentType.view}\n`
-
-        else if (currentTypeIsArray(currentType)) {
+            const property = resolverNameProperty(keys[key]);
+            typeRoot += `\t${property.name} ${currentType.view} ${property.replaceName}\n`
+            
+        } else if (currentTypeIsArray(currentType)) {
             /* Get element by element of array */
             let contentTree = ConstructStrucFromJson(json[keys[key]],
                 {
@@ -196,8 +252,9 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
             if (contentTree === '')
                 contentTree = { code: 'Any' };
-
-            typeRoot += `\t${resolverNameProperty(keys[key])} []${contentTree.code}\n`
+            
+            const property = resolverNameProperty(keys[key]);
+            typeRoot += `\t${property.name} []${contentTree.code} ${property.replaceName}\n`
 
         } else {
             /**
@@ -222,10 +279,14 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                     type: 'Any',
                     types: []
                 });
-                typeRoot += `\t${resolverNameProperty(keys[key])} Any\n`
+                const property = resolverNameProperty(keys[key]);
+                typeRoot += `\t${property.name} Any ${property.replaceName}\n`
             }
-            else
-                typeRoot += `\t${resolverNameProperty(keys[key])} ${contentTree.code}\n`
+            else {
+                
+                const property = resolverNameProperty(keys[key]);
+                typeRoot += `\t${property.name} ${contentTree.code} ${property.replaceName}\n`
+            }
         }
     }
 
@@ -233,7 +294,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
     if (constructStructTypeSimple(hiritageObj))
         typeRoot = {
-            code: `struct Root {\n${typeRoot}\n}`,
+            code: `struct Root {\n${typeRoot}}`,
             afterImplementation: ''
         };
     else if (constructStructWithArrayOfTypeUndefined(hiritageObj)) {
@@ -263,7 +324,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
             code: name
         };
     }
-    else if (typesArray.length > 0) {
+    else if (constructStructWithSumType(typesArray)) {
         typesArray = _.sortBy(_.sortedUniqBy(typesArray, it => it.nameType), it => it.nameType);
 
         const typeNumbers = typesArray.filter(it => ['int', 'f32'].includes(it.nameType));
@@ -370,6 +431,6 @@ function constructStructWithNewStructAux(hiritageObj) {
  * @param {{nameType: string, view: string, base: string}} type 
  * @returns {boolean}
  */
-function constructStructStructWithSumType(type) {
+function constructStructWithSumType(type) {
     return type.length > 0;
 }

@@ -77,3 +77,12 @@ h2 {
     height: 80%;
     margin-top: -5%;
 }
+
+[data-tooltip] {
+    /* small fix */
+    &:not(a, button, input) {
+        border-bottom: 1px;
+        text-decoration: n  one;
+        cursor: help;
+    }
+}

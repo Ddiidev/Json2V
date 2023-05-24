@@ -10,7 +10,6 @@ The generated code can have sums of types, structs and Any{}(empty)
  - [X] SumTypes for array with multiple types.
  - [X] New structures for each object key.
  - [ ] Omitempty.
- - [ ] Enum to number.
  - [ ] Structs anonymous.
  - [ ] Property name replacement.
 
