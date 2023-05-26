@@ -1,21 +1,36 @@
+try {
+    /**
+     * bypass in the import failure in purely browser environment and with that I can still have a basic autocomplete.
+     * Imports are happening in html.
+     */
+    var { } = require('./validations.js');
+    var { } = require('./resolvers.js');
+    var { } = require('./types.js');
+} catch { }
+
+
 var editorVlang = ace.edit("editorVlang");
 var editorJson = ace.edit("editorJson");
 
-editorVlang.setTheme("ace/theme/dracula");
-editorVlang.setOptions({
-    fontFamily: "JetBrains Mono",
-    fontSize: "14pt"
-});
-editorVlang.session.setMode("ace/mode/golang");
+main();
+
+function main() {
+    editorVlang.setTheme("ace/theme/dracula");
+    editorVlang.setOptions({
+        fontFamily: "JetBrains Mono",
+        fontSize: "14pt"
+    });
+    editorVlang.session.setMode("ace/mode/golang");
 
 
-editorJson.setTheme("ace/theme/dracula");
-editorJson.setOptions({
-    fontFamily: "JetBrains Mono",
-    fontSize: "14pt"
-});
-editorJson.session.setMode("ace/mode/json");
-editorJson.getSession().on('change', runCode);
+    editorJson.setTheme("ace/theme/dracula");
+    editorJson.setOptions({
+        fontFamily: "JetBrains Mono",
+        fontSize: "14pt"
+    });
+    editorJson.session.setMode("ace/mode/json");
+    editorJson.getSession().on('change', runCode);
+}
 
 
 
@@ -23,57 +38,14 @@ function runCode() {
     try {
         const code = JsonToStruct(editorJson.getValue())
 
+        if (code === null)
+            return;
+
         editorVlang.setValue(code);
     } catch (e) {
         console.log(e)
     }
 }
-
-const RESERVED_WORDS = [
-    'struct',
-    'interface',
-    'union',
-    'type',
-    'enum',
-
-
-    'for',
-    'pub',
-    'fn',
-    'import',
-    'if',
-    'else',
-    'return',
-    'break',
-    'continue',
-    'spawn',
-    'go',
-    'defer',
-    'goto',
-
-
-    'mut',
-    'const',
-    'map',
-    'int',
-    'i8',
-    'i16',
-    'i32',
-    'i64',
-    'u8',
-    'u16',
-    'u32',
-    'u64',
-    'f32',
-    'f64',
-    'bool',
-    'string',
-    'rune',
-    'byte',
-    'nil',
-    'true',
-    'false',
-]
 
 var FlagOmitEmpty = false;
 var FlagReserverdWordsWithAt = false;
@@ -82,50 +54,7 @@ function loadFlags() {
     FlagOmitEmpty = document.getElementById('ck_omitempty').checked;
     FlagReserverdWordsWithAt = document.getElementById('ck_reserved_word').checked;
     FlagStructAnon = document.getElementById('ck_struct_anon').checked;
-}
-
-function click_ck_omitempty() {
-    loadFlags();
     runCode();
-}
-
-function click_ck_reserved_word() {
-    loadFlags();
-    runCode();
-}
-
-
-/**
- * 
- * @param input
- * @returns {{nameType: string, view: string, base: string}}
- */
-function getType(input) {
-    type = typeof (input);
-    if (type === 'number')
-        return {
-            nameType: Number.isInteger(input) ? 'int' : 'f32',
-            view: Number.isInteger(input) ? 'int' : 'f32',
-            base: 'number',
-        };
-    else if (type === 'boolean')
-        return {
-            nameType: 'bool',
-            base: type,
-            view: 'bool'
-        }
-    else if (Array.isArray(input))
-        return {
-            nameType: 'array',
-            base: 'array',
-            view: '[]'
-        }
-
-    return {
-        nameType: type,
-        view: type,
-        base: type
-    };
 }
 
 
@@ -135,84 +64,12 @@ String.prototype.capitalize = function () {
 
 
 /** @type {{nameType: string, type: string, types: []Object}[]} */
-let afterImplementation = [];
+let afterImplementationTypes = [];
 
 
-function pushAfterImplementation(type) {
-    if (afterImplementation.find(it => it.nameType === type.nameType) === undefined)
-        afterImplementation.push(type);
-}
-
-
-/**
- * @description Sets the property name to a suitable name in the V language standard
- * @param {string} name
- * @returns {{ name: string, replaceName: string }}
- * */
-function resolverNameProperty(name) {
-    let final_name = '';
-    for (let i = 0; i < name.length; i++) {
-        const char = name[i];
-        if (char === char.toUpperCase() && !Number.isInteger(parseInt(char)))
-            final_name += `_${char.toLowerCase()}`;
-        else
-            final_name += char;
-    }
-    final_name = final_name.charAt(0) == '_' ? final_name.substr(1) : final_name;
-    final_name = final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
-
-    let currentReservedWord = RESERVED_WORDS.includes(final_name);
-    if (currentReservedWord && FlagReserverdWordsWithAt)
-        final_name = `@${final_name}`;
-    else if (currentReservedWord)
-        final_name = `${final_name}_`;
-
-    const replaceName = final_name !== name && !(currentReservedWord && FlagReserverdWordsWithAt) ? `json: "${name}"` : '';
-
-    return { name: final_name, replaceName: replaceName };
-}
-
-
-/**
- * @description Sets the type name to a suitable name in the V language standard
- * */
-function resolverNameType(name) {
-    let final_name = '';
-    let isUpper = false;
-    for (let i = 0; i < name.length; i++) {
-        const char = name[i];
-        if (char !== '_')
-            if (isUpper) {
-                final_name += char.toUpperCase();
-                isUpper = false;
-            } else
-                final_name += char;
-        else
-            isUpper = true;
-    }
-    final_name = final_name.charAt(0).toLocaleUpperCase() + final_name.substr(1);
-    return final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
-}
-
-
-/**
- * @description Construct a attribute of property
- * @param {string} attrib
- * @returns {string}
- */
-function constructAttribute(attrib) {
-
-    let attribs = attrib === '' || attrib === undefined ? [] : [attrib];
-
-    if (FlagOmitEmpty)
-        attribs.push('omitempty');
-
-    if (attribs.length === 0)
-        return '';
-    else if (attribs.length === 1)
-        return `[${attribs.join('')}]`;
-
-    return `[${attribs.join('; ')}]`;
+function pushAfterImplementationType(type) {
+    if (afterImplementationTypes.find(it => it.nameType === type.nameType) === undefined)
+        afterImplementationTypes.push(type);
 }
 
 
@@ -220,16 +77,13 @@ function constructAttribute(attrib) {
  * @description Add a new type to the list of types to be implemented and convert the json to struct
  */
 function JsonToStruct(js, type_obj = undefined) {
-
-
-    loadFlags();
-
-
-    afterImplementation = [];
+    afterImplementationTypes = [];
     let code = ConstructStrucFromJson(js, type_obj).code;
 
+    if (code === null)
+        return null;
 
-    codeAfeterImplementation = afterImplementation.map(it => {
+    codeAfeterImplementation = afterImplementationTypes.map(it => {
         if (it.type == 'sumType')
             return `type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
         else if (it.types.length == 0)
@@ -245,7 +99,6 @@ function JsonToStruct(js, type_obj = undefined) {
 }
 
 
-
 /**
  * 
  * @param {string | object} js 
@@ -255,7 +108,13 @@ function JsonToStruct(js, type_obj = undefined) {
 function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
 
-    const json = typeof (js) === 'string' ? JSON.parse(js) : js;
+    const json = (() => {
+        try {
+            return typeof (js) === 'string' ? JSON.parse(js) : js;
+        } catch {
+            return null;
+        }
+    })();
 
     if (json === null)
         return { code: null };
@@ -327,7 +186,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 }
             }
             else if (contentTree.code === null) {
-                pushAfterImplementation({
+                pushAfterImplementationType({
                     nameType: 'Any',
                     type: 'Any',
                     types: []
@@ -369,7 +228,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 return 'Undefined';
         })();
 
-        pushAfterImplementation({
+        pushAfterImplementationType({
             nameType: resolverNameType(name),
             types: [typeRoot],
             type: typesArray.length > 1 ? 'sumType' : ''
@@ -396,7 +255,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         })();
 
         if (typesArray.length > 1)
-            pushAfterImplementation({
+            pushAfterImplementationType({
                 nameType: name,
                 types: typesArray,
                 type: typesArray.length > 1 ? 'sumType' : ''
@@ -407,85 +266,4 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         };
     }
     return typeRoot;
-}
-
-
-
-
-
-/**
- * @description Check if current type name type is an array
- * @param {{nameType: string, view: string, nameObj: string} | undefined}} hiritageObj 
- * @returns {boolean}
- */
-function isInsideNestedArray(hiritageObj) {
-    return hiritageObj !== undefined && hiritageObj.nameType === 'array';
-}
-
-/**
- * @description Check if current type name type is an object
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function currentTypeIsObject(type) {
-    return type.nameType === 'object';
-}
-
-/**
- * @description Check if current type name type is an object or array
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function currentTypeIsObjectOrArray(type) {
-    return ['object', 'array'].includes(type.nameType);
-}
-
-
-/**
- * @description Check if current type name type is an array
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function currentTypeIsArray(type) {
-    return type.nameType === 'array';
-}
-
-
-/**
- * @description Verify if hiritageObj is undefined, if true, the type is simple
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function constructStructTypeSimple(hiritageObj) {
-    return hiritageObj === undefined;
-}
-
-
-/**
- * @description Verify if hiritageObj is undefined and nameObj is Undefined, if true, the type is []Undefined
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function constructStructWithArrayOfTypeUndefined(hiritageObj) {
-    return hiritageObj !== undefined && hiritageObj.nameObj === 'Undefined';
-}
-
-
-/**
- * @description Verify if hiritageObj is undefined and nameObj is object, if true, the type is struct with name the key
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function constructStructWithNewStructAux(hiritageObj) {
-    return hiritageObj !== undefined && hiritageObj.nameType === 'object';
-}
-
-
-/**
- * @description verify if 
- * @param {{nameType: string, view: string, base: string}} type 
- * @returns {boolean}
- */
-function constructStructWithSumType(type) {
-    return type.length > 0;
 }

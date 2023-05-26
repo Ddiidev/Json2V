@@ -21,44 +21,56 @@
 
     <body>
         <div id="app">
-        <div class="container-fluid main-app">
-            <article class="options">
-                <fieldset>
-                    <div class="grid">
-                        <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
-                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" onclick="click_ck_omitempty()" checked>
-                            omitempty
-                        </label>
-                        <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type" for="ck_reserved_word">
-                            <input type="checkbox" id="ck_reserved_word" onclick="click_ck_reserved_word()" name="ck_reserved_word">
-                            reserved word with @
-                        </label>
-                        <label data-tooltip="Anonymous struct instead of a helper struct" for="ck_struct_anon">
-                            <input type="checkbox" id="ck_struct_anon" onclick="click_ck_struct_anon()" name="ck_struct_anon" disabled>
-                            struct anonymous
-                        </label>
-                    </div>
-                </fieldset>
-            </article>
-
-
-            <div class="grid" style="display: grid; height: 80%; padding: -15px;">
-                <article style="text-align: center;">
-                    <h2>JSON</h2>
-                    <div id="editorJson"></div>
+            <div class="container-fluid main-app">
+                <article class="options">
+                    <fieldset>
+                        <div class="grid">
+                            <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
+                                <input type="checkbox" id="ck_omitempty" name="ck_omitempty" onclick="loadFlags()"
+                                    checked>
+                                omitempty
+                            </label>
+                            <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type"
+                                for="ck_reserved_word">
+                                <input type="checkbox" id="ck_reserved_word" onclick="loadFlags()"
+                                    name="ck_reserved_word">
+                                reserved word with @
+                            </label>
+                            <label data-tooltip="Anonymous struct instead of a helper struct" for="ck_struct_anon">
+                                <input type="checkbox" id="ck_struct_anon" onclick="loadFlags()" name="ck_struct_anon"
+                                    disabled>
+                                struct anonymous
+                            </label>
+                        </div>
+                    </fieldset>
                 </article>
 
-                <article style="text-align: center;">
-                    <h2>Vlang</h2>
-                    <div id="editorVlang"></div>
-                </article>
+
+                <div class="grid" style="display: grid; height: 80%; padding: -15px;">
+                    <article style="text-align: center;">
+                        <h2>JSON</h2>
+                        <div id="editorJson"></div>
+                    </article>
+
+                    <article style="text-align: center;">
+                        <h2>Vlang</h2>
+                        <div id="editorVlang"></div>
+                    </article>
+                </div>
             </div>
         </div>
-    </div>
 
+        <script>
+            window.onerror = function (msg, url, line, col, err) {
+                return true
+            }
+        </script>
         <script src="./ace-builds/src-min/ace.js" type="text/javascript" charset="utf-8"></script>
 
         <script defer src="./index.js"></script>
+        <script defer src="./validations.js"></script>
+        <script defer src="./types.js"></script>
+        <script defer src="./resolvers.js"></script>
     </body>
 
 </html>
