@@ -13,7 +13,6 @@ var editorVlang = ace.edit("editorVlang");
 var editorJson = ace.edit("editorJson");
 
 main();
-
 function main() {
     editorVlang.setTheme("ace/theme/dracula");
     editorVlang.setOptions({
@@ -47,7 +46,7 @@ function runCode() {
     }
 }
 
-var FlagOmitEmpty = false;
+var FlagOmitEmpty = true;
 var FlagReserverdWordsWithAt = false;
 var FlagStructAnon = false;
 function loadFlags() {
@@ -147,6 +146,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         } else if (isInsideNestedArray(hiritageObj))
             /* into nested array */
             typesArray.push(currentType);
+        
         else if (!currentTypeIsObjectOrArray(currentType)) {
             /* Simples key */
             const property = resolverNameProperty(keys[key]);
@@ -228,14 +228,16 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
                 return 'Undefined';
         })();
 
-        pushAfterImplementationType({
-            nameType: resolverNameType(name),
-            types: [typeRoot],
-            type: typesArray.length > 1 ? 'sumType' : ''
-        });
+        if (!FlagStructAnon) {
+            pushAfterImplementationType({
+                nameType: resolverNameType(name),
+                types: [typeRoot],
+                type: typesArray.length > 1 ? 'sumType' : ''
+            });
+        }
 
         typeRoot = {
-            code: name
+            code: !FlagStructAnon ? name : `struct {\n${typeRoot.replace('\t', '\t\t')}\t}`,
         };
     }
     else if (constructStructWithSumType(typesArray)) {
