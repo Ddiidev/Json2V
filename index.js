@@ -237,7 +237,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
         }
 
         typeRoot = {
-            code: !FlagStructAnon ? name : `struct {\n${typeRoot.replace('\t', '\t\t')}\t}`,
+            code: !FlagStructAnon ? name : `struct {\n${typeRoot.replaceAll('\t', '\t\t')}\t}`,
         };
     }
     else if (constructStructWithSumType(typesArray)) {
