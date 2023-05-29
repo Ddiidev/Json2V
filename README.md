@@ -11,7 +11,7 @@ The generated code can have sums of types, structs and Any{}(empty)
  - [X] New structures for each object key.
  - [X] Reserved word with _ or @.
  - [X] Omitempty.
- - [ ] Structs anonymous.
+ - [X] Structs anonymous.
  - [X] Property name replacement.
 
 <br/> <br/>
