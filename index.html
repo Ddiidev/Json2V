@@ -20,29 +20,57 @@
     </head>
 
     <body>
+        <article class="options">
+            <nav>
+                <ul>
+                    <li></li>
+                    <li>
+                        <label data-tooltip="Vlang.io" data-placement="bottom">
+                            <a href="https://vlang.io" target="_blank">
+                                <img src="https://devicons.dev.br/icons?icon=V&theme=dark">
+                            </a>
+                        </label>
+                    </li>
+                    <li>
+                        <label data-tooltip="Json2V" data-placement="bottom">
+                            <a href="https://github.com/ldedev/Json2V" target="_blank">
+                                <img src="https://devicons.dev.br/icons?icon=Github&theme=dark">
+                            </a>
+                        </label>
+                    </li>
+                </ul>
+
+                <ul>
+                    <li>
+                        <label data-placement="bottom" data-tooltip="Field omitted if field value is empty"
+                            for="ck_omitempty">
+                            <input type="checkbox" id="ck_omitempty" name="ck_omitempty" onclick="loadFlags()" checked>
+                            omitempty
+                        </label>
+                    </li>
+                    <li>
+                        <label data-placement="bottom"
+                            data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type"
+                            for="ck_reserved_word">
+                            <input type="checkbox" id="ck_reserved_word" onclick="loadFlags()" name="ck_reserved_word">
+                            reserved word with @
+                        </label>
+                    </li>
+                    <li>
+                        <label data-placement="bottom" data-tooltip="Anonymous struct instead of a helper struct"
+                            for="ck_struct_anon">
+                            <input type="checkbox" id="ck_struct_anon" onclick="loadFlags()" name="ck_struct_anon">
+                            struct anonymous
+                        </label>
+                    </li>
+                </ul>
+                <ul></ul>
+                <ul></ul>
+            </nav>
+        </article>
         <div id="app">
             <div class="container-fluid main-app">
-                <article class="options">
-                    <fieldset>
-                        <div class="grid">
-                            <label data-tooltip="Field omitted if field value is empty" for="ck_omitempty">
-                                <input type="checkbox" id="ck_omitempty" name="ck_omitempty" onclick="loadFlags()"
-                                    checked>
-                                omitempty
-                            </label>
-                            <label data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type"
-                                for="ck_reserved_word">
-                                <input type="checkbox" id="ck_reserved_word" onclick="loadFlags()"
-                                    name="ck_reserved_word">
-                                reserved word with @
-                            </label>
-                            <label data-tooltip="Anonymous struct instead of a helper struct" for="ck_struct_anon">
-                                <input type="checkbox" id="ck_struct_anon" onclick="loadFlags()" name="ck_struct_anon">
-                                struct anonymous
-                            </label>
-                        </div>
-                    </fieldset>
-                </article>
+
 
 
                 <div class="grid" style="display: grid; height: 80%; padding: -15px;">
