@@ -8,6 +8,8 @@ try {
     var { } = require('./types.js');
 } catch { }
 
+/** @type {{nameType: string, type: string, types: []Object}[]} */
+let afterImplementationTypes = [];
 
 var editorVlang = ace.edit("editorVlang");
 var editorJson = ace.edit("editorJson");
@@ -29,6 +31,8 @@ function main() {
     });
     editorJson.session.setMode("ace/mode/json");
     editorJson.getSession().on('change', runCode);
+
+    editorJson.setValue('{\n\t"_example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
 }
 
 
@@ -60,10 +64,6 @@ function loadFlags() {
 String.prototype.capitalize = function () {
     return this.charAt(0).toUpperCase() + this.substr(1);
 }
-
-
-/** @type {{nameType: string, type: string, types: []Object}[]} */
-let afterImplementationTypes = [];
 
 
 function pushAfterImplementationType(type) {
