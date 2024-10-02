@@ -33,6 +33,7 @@ function main() {
     editorJson.getSession().on('change', runCode);
 
     editorJson.setValue('{\n\t"_example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
+    loadFlags();
 }
 
 

@@ -64,7 +64,7 @@ function constructAttribute(attrib) {
     if (attribs.length === 0)
         return '';
     else if (attribs.length === 1)
-        return `[${attribs.join('')}]`;
+        return `@[${attribs.join('')}]`;
 
-    return `[${attribs.join('; ')}]`;
+    return `@[${attribs.join('; ')}]`;
 }
