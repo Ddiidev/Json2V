@@ -4,6 +4,7 @@
  * @returns {{ name: string, replaceName: string }}
  * */
 function resolverNameProperty(name) {
+
     let final_name = '';
     for (let i = 0; i < name.length; i++) {
         const char = name[i];
@@ -13,7 +14,7 @@ function resolverNameProperty(name) {
             final_name += char;
     }
     final_name = final_name.charAt(0) == '_' ? final_name.substr(1) : final_name;
-    final_name = final_name.replace(/[^a-zA-Z0-9_]/g, '').replace(/_{2,}/g, '_');
+    final_name = final_name.normalize('NFD').replace(/[^a-zA-Z0-9_]|[\u0300-\u036f]/g, '').replace(/_{2,}/g, '_');
 
     let currentReservedWord = RESERVED_WORDS.includes(final_name);
     if (currentReservedWord && FlagReserverdWordsWithAt)
