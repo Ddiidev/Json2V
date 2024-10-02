@@ -4,6 +4,7 @@ var RESERVED_WORDS = [
     'union',
     'type',
     'enum',
+    'implements',
 
 
     'for',

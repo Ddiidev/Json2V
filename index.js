@@ -40,7 +40,7 @@ function main() {
 
 function runCode() {
     try {
-        const code = JsonToStruct(editorJson.getValue())
+        const code = jsonToStruct(editorJson.getValue())
 
         if (code === null)
             return;
@@ -76,9 +76,9 @@ function pushAfterImplementationType(type) {
 /**
  * @description Add a new type to the list of types to be implemented and convert the json to struct
  */
-function JsonToStruct(js, type_obj = undefined) {
+function jsonToStruct(js, type_obj = undefined) {
     afterImplementationTypes = [];
-    let code = ConstructStrucFromJson(js, type_obj).code;
+    let code = constructStrucFromJson(js, type_obj).code;
 
     if (code === null)
         return null;
@@ -105,7 +105,7 @@ function JsonToStruct(js, type_obj = undefined) {
  * @param {{nameType: string, view: string, nameObj: string} | undefined} hiritageObj 
  * @returns {{code: string, afterImplementation: string}}
  */
-function ConstructStrucFromJson(js, hiritageObj = undefined) {
+function constructStrucFromJson(js, hiritageObj = undefined) {
 
 
     const json = (() => {
@@ -132,7 +132,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
         if (isInsideNestedArray(hiritageObj) && currentTypeIsObject(currentType)) {
             /* into nested array */
-            const contentTree = ConstructStrucFromJson(json[keys[key]],
+            const contentTree = constructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: hiritageObj
@@ -156,7 +156,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
 
         } else if (currentTypeIsArray(currentType)) {
             /* Get element by element of array */
-            let contentTree = ConstructStrucFromJson(json[keys[key]],
+            let contentTree = constructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: !Array.isArray(json) ? keys[key] : undefined
@@ -173,7 +173,7 @@ function ConstructStrucFromJson(js, hiritageObj = undefined) {
             /**
              * Object or Array of key nested
              */
-            let contentTree = ConstructStrucFromJson(json[keys[key]],
+            let contentTree = constructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
                     nameObj: !Array.isArray(json) ? keys[key] : undefined
