@@ -32,7 +32,7 @@ function main() {
     editorJson.session.setMode("ace/mode/json");
     editorJson.getSession().on('change', runCode);
 
-    editorJson.setValue('{\n\t"_example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
+    editorJson.setValue('{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
     loadFlags();
 }
 
@@ -51,13 +51,15 @@ function runCode() {
     }
 }
 
-var FlagOmitEmpty = true;
-var FlagReserverdWordsWithAt = false;
-var FlagStructAnon = false;
+var flagAllPublic = true;
+var flagOmitEmpty = true;
+var flagReserverdWordsWithAt = false;
+var flagStructAnon = false;
 function loadFlags() {
-    FlagOmitEmpty = document.getElementById('ck_omitempty').checked;
-    FlagReserverdWordsWithAt = document.getElementById('ck_reserved_word').checked;
-    FlagStructAnon = document.getElementById('ck_struct_anon').checked;
+    flagAllPublic = document.getElementById('ck_all_pubblic').checked;
+    flagOmitEmpty = document.getElementById('ck_omitempty').checked;
+    flagReserverdWordsWithAt = document.getElementById('ck_reserved_word').checked;
+    flagStructAnon = document.getElementById('ck_struct_anon').checked;
     runCode();
 }
 
@@ -85,11 +87,14 @@ function jsonToStruct(js, type_obj = undefined) {
 
     codeAfeterImplementation = afterImplementationTypes.map(it => {
         if (it.type == 'sumType')
-            return `type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
+            return `${canIsPublic()}type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
         else if (it.types.length == 0)
-            return `struct ${it.nameType}{}`;
+            return `${canIsPublic()}struct ${it.nameType}{}`;
         else
-            return `struct ${it.nameType} {\n${it.types[0]}}\n`;
+        {
+            debugger
+            return `${canIsPublic()}struct ${it.nameType} {${canIsPublicForFields(it.types[0])}\n${it.types[0]}}\n`;
+        }
     }).join('\n');
 
 
@@ -98,6 +103,21 @@ function jsonToStruct(js, type_obj = undefined) {
     return code;
 }
 
+function canIsPublic() {
+    if (flagAllPublic)
+        return 'pub ';
+    else
+        return '';
+}
+
+function canIsPublicForFields(fields, ident) {
+    if (fields !== undefined && fields === "")
+        return '';
+    else if (flagAllPublic)
+        return `\n${ident ?? ''}pub mut:`;
+    else
+        return '';
+}
 
 /**
  * 
@@ -209,12 +229,12 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
 
     if (constructStructTypeSimple(hiritageObj))
         typeRoot = {
-            code: `struct Root {\n${typeRoot}}`,
+            code: `${canIsPublic()}struct Root {${canIsPublicForFields()}\n${typeRoot}}`,
             afterImplementation: ''
         };
     else if (constructStructWithArrayOfTypeUndefined(hiritageObj)) {
         typeRoot = {
-            code: `type Root = []${hiritageObj.nameObj}\n`,
+            code: `${canIsPublic()}type Root = []${hiritageObj.nameObj}\n`,
             afterImplementation: ''
         };
     }
@@ -229,7 +249,7 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
                 return 'Undefined';
         })();
 
-        if (!FlagStructAnon) {
+        if (!flagStructAnon) {
             pushAfterImplementationType({
                 nameType: resolverNameType(name),
                 types: [typeRoot],
@@ -238,7 +258,7 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
         }
 
         typeRoot = {
-            code: !FlagStructAnon ? name : `struct {\n${typeRoot.replaceAll('\t', '\t\t')}\t}`,
+            code: !flagStructAnon ? name : `struct {${canIsPublicForFields(typeRoot.trim(), `\t`)}\n${typeRoot.replaceAll('\t', '\t\t')}\t}`,
         };
     }
     else if (constructStructWithSumType(typesArray)) {

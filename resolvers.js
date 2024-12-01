@@ -17,12 +17,12 @@ function resolverNameProperty(name) {
     final_name = final_name.normalize('NFD').replace(/[^a-zA-Z0-9_]|[\u0300-\u036f]/g, '').replace(/_{2,}/g, '_');
 
     let currentReservedWord = RESERVED_WORDS.includes(final_name);
-    if (currentReservedWord && FlagReserverdWordsWithAt)
+    if (currentReservedWord && flagReserverdWordsWithAt)
         final_name = `@${final_name}`;
     else if (currentReservedWord)
         final_name = `${final_name}_`;
 
-    const replaceName = final_name !== name && !(currentReservedWord && FlagReserverdWordsWithAt) ? `json: "${name}"` : '';
+    const replaceName = final_name !== name && !(currentReservedWord && flagReserverdWordsWithAt) ? `json: "${name}"` : '';
 
     return { name: final_name, replaceName: replaceName };
 }
@@ -59,7 +59,7 @@ function constructAttribute(attrib) {
 
     let attribs = attrib === '' || attrib === undefined ? [] : [attrib];
 
-    if (FlagOmitEmpty)
+    if (flagOmitEmpty)
         attribs.push('omitempty');
 
     if (attribs.length === 0)
