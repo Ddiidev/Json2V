@@ -108,6 +108,20 @@ function getImplementationTypeSignature(fields) {
         .join('\n');
 }
 
+
+function getSortedJsonKeys(json) {
+    const keys = Object.keys(json);
+
+    if (Array.isArray(json))
+        return keys;
+
+    return keys.sort((left, right) => {
+        const leftProperty = resolverNameProperty(left).name;
+        const rightProperty = resolverNameProperty(right).name;
+        return leftProperty.localeCompare(rightProperty);
+    });
+}
+
 function resolveImplementationType(nameType, fields, type = '') {
     const signature = getImplementationTypeSignature(fields);
     const existentNameType = implementationTypeBySignature.get(signature);
@@ -193,7 +207,7 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
 
     let typeRoot = '';
     let typesArray = [];
-    const keys = Object.keys(json)
+    const keys = getSortedJsonKeys(json);
 
 
 
