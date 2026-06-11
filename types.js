@@ -51,7 +51,7 @@ var RESERVED_WORDS = [
  * @returns {{nameType: string, view: string, base: string}}
  */
 function getType(input) {
-    type = typeof (input);
+    const type = typeof (input);
     if (type === 'number')
         return {
             nameType: Number.isInteger(input) ? 'int' : 'f32',
