@@ -11,6 +11,12 @@ try {
 /** @type {{nameType: string, type: string, types: []Object}[]} */
 let afterImplementationTypes = [];
 
+/** @type {Map<string, string>} */
+let implementationTypeBySignature = new Map();
+
+const defaultJson = '{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}';
+const lastJsonLocalStorageKey = 'json2v:last-json';
+
 var editorVlang = ace.edit("editorVlang");
 var editorJson = ace.edit("editorJson");
 
@@ -32,15 +38,31 @@ function main() {
     editorJson.session.setMode("ace/mode/json");
     editorJson.getSession().on('change', runCode);
 
-    editorJson.setValue('{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
+    editorJson.setValue(getLastJson());
     loadFlags();
 }
 
 
+function getLastJson() {
+    try {
+        const lastJson = localStorage.getItem(lastJsonLocalStorageKey);
+        return lastJson !== null ? lastJson : defaultJson;
+    } catch {
+        return defaultJson;
+    }
+}
+
+function saveLastJson(json) {
+    try {
+        localStorage.setItem(lastJsonLocalStorageKey, json);
+    } catch { }
+}
 
 function runCode() {
     try {
-        const code = jsonToStruct(editorJson.getValue())
+        const json = editorJson.getValue();
+        saveLastJson(json);
+        const code = jsonToStruct(json)
 
         if (code === null)
             return;
@@ -55,11 +77,13 @@ var flagAllPublic = true;
 var flagOmitEmpty = true;
 var flagReserverdWordsWithAt = false;
 var flagStructAnon = false;
+var flagReuseIdenticalStructs = true;
 function loadFlags() {
     flagAllPublic = document.getElementById('ck_all_pubblic').checked;
     flagOmitEmpty = document.getElementById('ck_omitempty').checked;
     flagReserverdWordsWithAt = document.getElementById('ck_reserved_word').checked;
     flagStructAnon = document.getElementById('ck_struct_anon').checked;
+    flagReuseIdenticalStructs = document.getElementById('ck_reuse_identical_structs').checked;
     runCode();
 }
 
@@ -74,12 +98,40 @@ function pushAfterImplementationType(type) {
         afterImplementationTypes.push(type);
 }
 
+function getImplementationTypeSignature(fields) {
+    return fields
+        .trim()
+        .split('\n')
+        .map(it => it.trim())
+        .filter(it => it !== '')
+        .sort()
+        .join('\n');
+}
+
+function resolveImplementationType(nameType, fields, type = '') {
+    const signature = getImplementationTypeSignature(fields);
+    const existentNameType = implementationTypeBySignature.get(signature);
+
+    if (existentNameType !== undefined)
+        return existentNameType;
+
+    implementationTypeBySignature.set(signature, nameType);
+    pushAfterImplementationType({
+        nameType: nameType,
+        types: [fields],
+        type: type
+    });
+
+    return nameType;
+}
+
 
 /**
  * @description Add a new type to the list of types to be implemented and convert the json to struct
  */
 function jsonToStruct(js, type_obj = undefined) {
     afterImplementationTypes = [];
+    implementationTypeBySignature = new Map();
     let code = constructStrucFromJson(js, type_obj).code;
 
     if (code === null)
@@ -249,16 +301,22 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
                 return 'Undefined';
         })();
 
+        const nameType = resolverNameType(name);
+        let resolvedNameType = nameType;
+
         if (!flagStructAnon) {
-            pushAfterImplementationType({
-                nameType: resolverNameType(name),
-                types: [typeRoot],
-                type: typesArray.length > 1 ? 'sumType' : ''
-            });
+            if (flagReuseIdenticalStructs)
+                resolvedNameType = resolveImplementationType(nameType, typeRoot, typesArray.length > 1 ? 'sumType' : '');
+            else
+                pushAfterImplementationType({
+                    nameType: nameType,
+                    types: [typeRoot],
+                    type: typesArray.length > 1 ? 'sumType' : ''
+                });
         }
 
         typeRoot = {
-            code: !flagStructAnon ? name : `struct {${canIsPublicForFields(typeRoot.trim(), `\t`)}\n${typeRoot.replaceAll('\t', '\t\t')}\t}`,
+            code: !flagStructAnon ? resolvedNameType : `struct {${canIsPublicForFields(typeRoot.trim(), `\t`)}\n${typeRoot.replaceAll('\t', '\t\t')}\t}`,
         };
     }
     else if (constructStructWithSumType(typesArray)) {
