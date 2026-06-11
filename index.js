@@ -45,8 +45,7 @@ function main() {
 
 function getLastJson() {
     try {
-        const lastJson = localStorage.getItem(lastJsonLocalStorageKey);
-        return lastJson !== null ? lastJson : defaultJson;
+        return localStorage.getItem(lastJsonLocalStorageKey) ?? defaultJson;
     } catch {
         return defaultJson;
     }
