@@ -14,6 +14,12 @@ let afterImplementationTypes = [];
 /** @type {Map<string, string>} */
 let implementationTypeBySignature = new Map();
 
+/** @type {Map<string, string>} */
+let implementationSignatureByType = new Map();
+
+/** @type {Set<string>} */
+let reservedImplementationTypeNames = new Set();
+
 const defaultJson = '{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}';
 const lastJsonLocalStorageKey = 'json2v:last-json';
 
@@ -94,8 +100,7 @@ String.prototype.capitalize = function () {
 
 
 function pushAfterImplementationType(type) {
-    if (afterImplementationTypes.find(it => it.nameType === type.nameType) === undefined)
-        afterImplementationTypes.push(type);
+    afterImplementationTypes.push(type);
 }
 
 function getImplementationTypeSignature(fields) {
@@ -122,21 +127,70 @@ function getSortedJsonKeys(json) {
     });
 }
 
+function getUniqueImplementationTypeName(nameType) {
+    if (!implementationSignatureByType.has(nameType) && !reservedImplementationTypeNames.has(nameType))
+        return nameType;
+
+    let count = 2;
+    let uniqueNameType = `${nameType}${count}`;
+
+    while (implementationSignatureByType.has(uniqueNameType) || reservedImplementationTypeNames.has(uniqueNameType)) {
+        count++;
+        uniqueNameType = `${nameType}${count}`;
+    }
+
+    return uniqueNameType;
+}
+
+
+function getImplementationTypeOrder(nameType) {
+    const nameParts = nameType.match(/^(.*?)(\d+)?$/);
+    return {
+        name: nameParts[1],
+        index: nameParts[2] === undefined ? 1 : Number(nameParts[2])
+    };
+}
+
+function sortImplementationTypes(left, right) {
+    const leftOrder = getImplementationTypeOrder(left.nameType);
+    const rightOrder = getImplementationTypeOrder(right.nameType);
+    const nameCompare = leftOrder.name.localeCompare(rightOrder.name);
+
+    if (nameCompare !== 0)
+        return nameCompare;
+
+    return leftOrder.index - rightOrder.index;
+}
+
+function reserveImplementationTypeName(nameType) {
+    const reservedNameType = getUniqueImplementationTypeName(nameType);
+    reservedImplementationTypeNames.add(reservedNameType);
+    return reservedNameType;
+}
+
 function resolveImplementationType(nameType, fields, type = '') {
     const signature = getImplementationTypeSignature(fields);
     const existentNameType = implementationTypeBySignature.get(signature);
 
-    if (existentNameType !== undefined)
+    if (existentNameType !== undefined) {
+        reservedImplementationTypeNames.delete(nameType);
         return existentNameType;
+    }
 
-    implementationTypeBySignature.set(signature, nameType);
+    const resolvedNameType = reservedImplementationTypeNames.has(nameType)
+        ? nameType
+        : getUniqueImplementationTypeName(nameType);
+
+    reservedImplementationTypeNames.delete(resolvedNameType);
+    implementationTypeBySignature.set(signature, resolvedNameType);
+    implementationSignatureByType.set(resolvedNameType, signature);
     pushAfterImplementationType({
-        nameType: nameType,
+        nameType: resolvedNameType,
         types: [fields],
         type: type
     });
 
-    return nameType;
+    return resolvedNameType;
 }
 
 
@@ -146,19 +200,19 @@ function resolveImplementationType(nameType, fields, type = '') {
 function jsonToStruct(js, type_obj = undefined) {
     afterImplementationTypes = [];
     implementationTypeBySignature = new Map();
+    implementationSignatureByType = new Map();
+    reservedImplementationTypeNames = new Set();
     let code = constructStrucFromJson(js, type_obj).code;
 
     if (code === null)
         return null;
 
-    codeAfeterImplementation = afterImplementationTypes.map(it => {
+    const codeAfeterImplementation = afterImplementationTypes.sort(sortImplementationTypes).map(it => {
         if (it.type == 'sumType')
             return `${canIsPublic()}type ${it.nameType} = ${it.types.map(it => it.view).join(' | ')}`;
         else if (it.types.length == 0)
             return `${canIsPublic()}struct ${it.nameType}{}`;
-        else
-        {
-            debugger
+        else {
             return `${canIsPublic()}struct ${it.nameType} {${canIsPublicForFields(it.types[0])}\n${it.types[0]}}\n`;
         }
     }).join('\n');
@@ -242,10 +296,15 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
 
         } else if (currentTypeIsArray(currentType)) {
             /* Get element by element of array */
+            const nameObj = !Array.isArray(json) ? keys[key] : undefined;
+            const reservedNameType = nameObj !== undefined && !flagStructAnon
+                ? reserveImplementationTypeName(resolverNameType(nameObj))
+                : undefined;
             let contentTree = constructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
-                    nameObj: !Array.isArray(json) ? keys[key] : undefined
+                    nameObj: nameObj,
+                    reservedNameType: reservedNameType
                 });
 
             if (contentTree === '')
@@ -259,10 +318,15 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
             /**
              * Object or Array of key nested
              */
+            const nameObj = !Array.isArray(json) ? keys[key] : undefined;
+            const reservedNameType = nameObj !== undefined && !flagStructAnon
+                ? reserveImplementationTypeName(resolverNameType(nameObj))
+                : undefined;
             let contentTree = constructStrucFromJson(json[keys[key]],
                 {
                     ...currentType,
-                    nameObj: !Array.isArray(json) ? keys[key] : undefined
+                    nameObj: nameObj,
+                    reservedNameType: reservedNameType
                 });
 
 
@@ -315,7 +379,7 @@ function constructStrucFromJson(js, hiritageObj = undefined) {
                 return 'Undefined';
         })();
 
-        const nameType = resolverNameType(name);
+        const nameType = hiritageObj.reservedNameType ?? resolverNameType(name);
         let resolvedNameType = nameType;
 
         if (!flagStructAnon) {
