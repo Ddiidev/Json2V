@@ -14,6 +14,9 @@ let afterImplementationTypes = [];
 /** @type {Map<string, string>} */
 let implementationTypeBySignature = new Map();
 
+const defaultJson = '{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}';
+const lastJsonLocalStorageKey = 'json2v:last-json';
+
 var editorVlang = ace.edit("editorVlang");
 var editorJson = ace.edit("editorJson");
 
@@ -35,15 +38,31 @@ function main() {
     editorJson.session.setMode("ace/mode/json");
     editorJson.getSession().on('change', runCode);
 
-    editorJson.setValue('{\n\t"example_construct_struct": "",\n\t"person": {\n\t\t"name": "André",\n\t\t"age": 26\n\t}\n}');
+    editorJson.setValue(getLastJson());
     loadFlags();
 }
 
+function getLastJson() {
+    try {
+        const lastJson = localStorage.getItem(lastJsonLocalStorageKey);
+        return lastJson !== null ? lastJson : defaultJson;
+    } catch {
+        return defaultJson;
+    }
+}
 
+function saveLastJson(json) {
+    try {
+        localStorage.setItem(lastJsonLocalStorageKey, json);
+    } catch { }
+}
 
 function runCode() {
     try {
-        const code = jsonToStruct(editorJson.getValue())
+        const json = editorJson.getValue();
+        saveLastJson(json);
+
+        const code = jsonToStruct(json)
 
         if (code === null)
             return;
