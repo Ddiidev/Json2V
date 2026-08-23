@@ -1,43 +1,26 @@
 # Json2V
 
-A more complex real json that I got and tested was this one -> [CNPJ brasilapi](https://brasilapi.com.br/api/cnpj/v1/19131243000197)
+Turn a JSON payload into ready-to-use [V (vlang)](https://vlang.io/) structs: paste JSON on the left, get the struct code on the right.
 
-Converts a json into a structure in Vlang.
+**[Try it live](https://ddiidev.github.io/Json2V/)**
 
-The generated code can have sums of types, structs and Any{}(empty)
+Nested objects become their own structs and arrays with mixed types become sum types. A row of toggles controls the generated style:
 
- - [X] Key and value simple.
- - [X] SumTypes for array with multiple types.
- - [X] New structures for each object key.
- - [X] Reserved word with _ or @.
- - [X] Omitempty.
- - [X] Structs anonymous.
- - [X] Property name replacement.
+- `@[omitempty]` tag
+- All public fields/structs
+- Reserved words escaped with `@`
+- Anonymous structs instead of helper structs
+- Reuse identical struct shapes
 
-<br/> <br/>
+<br/>
 
-## Start of the project
-
-<br/> <br/>
+## Demo
 
 ![screenshot](/assets/img1.png)
 
-<br/> <br/>
-
-## Second stage
-
-<br/> <br/>
-
 ![screenshot](/assets/img2.gif)
 
-<br/> <br/>
-
-## End of project
-
-<br/> <br/>
-
 ![screenshot](/assets/img3.gif)
-
 
 <br/>
 
@@ -45,8 +28,6 @@ The generated code can have sums of types, structs and Any{}(empty)
 
 **Front-end:** [pico.css](https://picocss.com/), [lodash](https://lodash.com/)
 
-**Icon:** [favicon](https://favicon.io/)
-
 **Code editor:** [ace](https://ace.c9.io/)
 
-**fonts:** [google fonts](https://fonts.googleapis.com)
+**Fonts:** [google fonts](https://fonts.googleapis.com)
