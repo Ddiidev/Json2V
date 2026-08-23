@@ -52,7 +52,7 @@ h2 {
 }
 
 .options {
-    margin: 10px 10px 0;
+    margin: 10px var(--spacing) 0;
     padding: 8px;
 }
 
