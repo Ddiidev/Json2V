@@ -52,32 +52,36 @@ h2 {
 }
 
 .options {
-    margin-bottom: -20px;
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-right: 20px;
-    padding: 10px;
+    margin: 10px var(--spacing) 0;
+    padding: 8px;
 }
 
-#editorJson {
-    border-radius: 1%;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
+.editor-grid {
     height: 80%;
-    margin-top: -5%;
+    gap: 10px;
+    margin-top: 14px;
 }
 
+.code-panel {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+.code-panel h2 {
+    flex: 0 0 auto;
+    margin: 0 0 8px;
+}
+
+#editorJson,
 #editorVlang {
-    border-radius: 1%;
-    align-self: center;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 80%;
-    margin-top: -5%;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
 }
 
 [data-tooltip] {

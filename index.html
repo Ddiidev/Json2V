@@ -71,6 +71,13 @@
                     </label>
                 </li>
                 <li>
+                    <label data-placement="bottom" data-tooltip="All public structures and fields"
+                        for="ck_all_pubblic">
+                        <input type="checkbox" id="ck_all_pubblic" onclick="loadFlags()" name="ck_all_pubblic" checked>
+                        All public
+                    </label>
+                </li>
+                <li>
                     <label data-placement="bottom"
                         data-tooltip="Reserved words will be added an '@' instead of a '_' E.g. type = @type"
                         for="ck_reserved_word">
@@ -86,16 +93,9 @@
                     </label>
                 </li>
                 <li>
-                    <label data-placement="bottom" data-tooltip="All public structures and fields"
-                        for="ck_all_pubblic">
-                        <input type="checkbox" id="ck_all_pubblic" onclick="loadFlags()" name="ck_all_pubblic" checked>
-                        All public
-                    </label>
-                </li>
-                <li>
                     <label data-placement="bottom" data-tooltip="Reuse the first generated struct when another object has identical fields"
                         for="ck_reuse_identical_structs">
-                        <input type="checkbox" id="ck_reuse_identical_structs" onclick="loadFlags()" name="ck_reuse_identical_structs" checked>
+                        <input type="checkbox" id="ck_reuse_identical_structs" onclick="loadFlags()" name="ck_reuse_identical_structs">
                         reuse identical structures
                     </label>
                 </li>
@@ -109,13 +109,13 @@
 
 
 
-            <div class="grid" style="display: grid; height: 80%; padding: -15px;">
-                <article style="text-align: center;">
+            <div class="grid editor-grid">
+                <article class="code-panel">
                     <h2>JSON</h2>
                     <div id="editorJson"></div>
                 </article>
 
-                <article style="text-align: center;">
+                <article class="code-panel">
                     <h2>Vlang</h2>
                     <div id="editorVlang"></div>
                 </article>
